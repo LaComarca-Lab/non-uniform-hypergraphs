@@ -11,12 +11,16 @@ Lista de cosas por hacer:
 
 # Comparación con algoritmos ya existentes
 
+- Comparación con red púramente pairwise
+
 - Nosotros VS Benson, usando las ya implementadas en XGI: 
   - [ ] Clique
   - [ ] ZEC
   - [ ] HEC (vectorial, para distintas dimensiones k)
   - [ ] HEC (como media ponderada de todas las dimensiones)
-  
+
+  - [ ] Su idea de añadir no-uniformidad repitiendo índices (pág. 17)
+
 - Nosotros VS (Tudisco & Higham):
   - [ ] Leer bien lo que proponen
   - [ ] Encontrar funciones f, g, phi, psi apropiadas con las que comparar nuestro método
