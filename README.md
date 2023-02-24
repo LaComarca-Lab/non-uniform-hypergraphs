@@ -24,7 +24,7 @@ Lista de cosas por hacer:
 
   - [ ] Su idea de añadir no-uniformidad repitiendo índices (pág. 17)
 
-- Nosotros VS (Tudisco & Higham):
+- Nosotros VS (Tudisco & Higham), usando la implementada en XGI:
   - [ ] Leer bien lo que proponen
   - [ ] Encontrar funciones f, g, phi, psi apropiadas con las que comparar nuestro método
 
