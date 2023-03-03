@@ -137,3 +137,50 @@ def uniform_adjacency_tensor_Benson(H):
     
     return T
     
+
+
+
+####################################
+########## MEJORAR #################
+####################################
+
+
+def apply2(T, x):
+    '''
+    Given an 3th order tensor T, contract it twice with vector x
+    '''
+    
+    assert x.shape[0] == T.shape[0]
+    
+    # Initialize and sum accordingly
+    y = np.zeros(x.shape[0])
+    for i in range(T.shape[0]):
+        
+        for j, k in product(range(T.shape[0]), range(T.shape[0])):
+            
+            y[i] += T[i,j,k] * x[j] * x[k]
+        
+    return y
+    
+    
+def HEC_3(T, m=3, niter=2000, tol=1e-5, verbose=True):
+    '''
+    Chunk of code translated to Python from Julia (H_evec_NQI function) from
+    https://github.com/arbenson/Hyper-Evec-Centrality/blob/master/centrality.jl
+    '''
+    converged = False
+    x = np.ones(T.shape[0])
+    y = apply2(T, x)
+    for i in range(niter):
+        
+        y_scaled = np.power(y, 1/(m - 1))
+        x = y_scaled / np.sum(y_scaled)
+        y = apply2(T, x)
+        s = np.divide(y, np.power(x, m - 1))
+        converged = (max(s) - min(s)) / min(s) < tol
+        
+        if converged and verbose:
+            print('Finished in', i, 'iterations.')
+            break
+            
+    return x, converged
