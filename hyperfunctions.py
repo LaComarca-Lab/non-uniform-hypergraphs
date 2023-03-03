@@ -89,13 +89,15 @@ def apply_testing(T, x):
     :param x :: vector (centralities):
     :return y :: vector (T*x):
     '''
-    #assert x.shape[0] == T.shape[0]
-    print(T.shape)
+    assert x.shape[0] == T.shape[0]
     # Initialize and sum accordingly
-    y = np.zeros(T.shape[0])
+    y = np.zeros(x.shape[0])
     for i in range(T.shape[0]):
-        for j in product(range(T.shape[0]), repeat = len(T.shape)):
-            y[i] += T[j]*np.prod(np.delete(x, i))
+        for j in product(range(T.shape[0]), repeat = len(T.shape) - 1):
+            aux = [n for n in j]
+            aux.insert(0, i)
+            aux = tuple(aux)
+            y[i] += T[aux]*np.prod(x[[i for i in j]])
     return y
 
 def HEC_ours(T, m=3, niter=2000, tol=1e-5, verbose=True):
@@ -104,7 +106,8 @@ def HEC_ours(T, m=3, niter=2000, tol=1e-5, verbose=True):
     https://github.com/arbenson/Hyper-Evec-Centrality/blob/master/centrality.jl
     '''
     converged = False
-    x = np.ones(T.shape[0])
+    x = np.array([1, 6, 5, 4, 3, 8])#np.ones(T.shape[0])
+    print([1, 6, 5, 4, 3, 8])
     y = apply_testing(T, x)
     for i in range(niter):
         y_scaled = np.power(y, 1/(m - 1))   
@@ -118,6 +121,9 @@ def HEC_ours(T, m=3, niter=2000, tol=1e-5, verbose=True):
             break
             
     return x, converged
+
+
+print(HEC_ours(t3))
 
 ############ BENSON ################
 
