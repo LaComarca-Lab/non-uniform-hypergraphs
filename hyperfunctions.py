@@ -43,36 +43,43 @@ def uniformize(H, m=None):
     return Hextra
 
 
-def uniform_adjacency_tensor(H):
+def uniform_adjacency_combinatorial_tensor(H, m = None):
     '''
-    Given a Hypergraph H, returns its adjacency tensor.
-    If the hypergraph is non-uniform, 
-    we first uniformize (Hu) it adding a artificial node
+    Given a Hypergraph H, returns its adjacency tensor (with the Permutations with Repetions number corresponding to 
+    the number of phantom nodes added). If the hypergraph is not uniform, we uniformize it first by adding an aditional
+    dimension and an extra node (the one corresponding to this last dimension) the times we need
     :param h :: Hypergraph:
     :return t :: numpy.ndarray:
     '''
     assert isinstance(H, xgi.Hypergraph)
+        
+    dimension = len(H.nodes)
+    h_dict = H.edges.members(dtype=dict)
+    hyperdim = {edge: len(edgenodes) for edge, edgenodes in h_dict.items()}
 
-    if not xgi.is_uniform(H):
-        Hu = uniformize(H)
-    
-    dimension = len(Hu.nodes)
-    m = len(Hu.edges.members()[0])
-    
+    # Find maximum hyperedge dimension
+    if not m:
+        m = max(hyperdim.values())
+    else:
+        assert isinstance(m, int) and m >= max(hyperdim.values())
+    if not is_uniform(h):
+        # In case it isn't uniform, we node to add the phantom node, i.e, one more dimension
+        dimension += 1
     shape = [dimension] * m
     T = np.zeros(shape)
 
-    for edge in Hu.edges.members():
-        
-        if '*' in edge:
-            edge.remove('*')
-            edge.add(dimension-1)
-        
+    for i in H.edges.members():
+        initial_len = len(i)
+        edge = [k for k in i]
+        while len(edge) < m:
+            # We get here just in case is not uniform
+            edge.append(dimension - 1)
+        print(edge)
         perms = permutations(edge)
-        
+        entry = math.factorial(initial_len)/math.factorial(len(edge))
         for indices in perms:
-            T[indices] = 1
-    
+            print(indices)
+            T[indices] = entry
     return T
 
 
