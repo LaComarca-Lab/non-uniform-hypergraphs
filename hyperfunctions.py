@@ -7,6 +7,7 @@ import copy
 import numpy as np
 import xgi
 from itertools import permutations
+from itertools import combinations
 
 ######## Ours ###########
 
@@ -43,43 +44,59 @@ def uniformize(H, m=None):
 
 
 def uniform_adjacency_combinatorial_tensor(H, m = None):
-    '''
-    Given a Hypergraph H, returns its adjacency tensor (with the Permutations with Repetions number corresponding to 
-    the number of phantom nodes added). If the hypergraph is not uniform, we uniformize it first by adding an aditional
-    dimension and an extra node (the one corresponding to this last dimension) the times we need
+    '''Given a Hypergraph H, returns its adjacency tensor (with the Permutations with Repetions number corresponding to 
+    the number of phantom nodes added).
+
+    If the hypergraph is not uniform or m != the dimension of the hyperedges, we uplift the lower-dimensional hyperedges 
+    by introducing a "phantom node" (indexed as N+1), and we project down the higher-dimensional hyperedges.
+
     :param h :: Hypergraph:
     :return t :: numpy.ndarray:
     '''
-    assert isinstance(H, xgi.Hypergraph)
         
-    dimension = len(H.nodes)
-    h_dict = H.edges.members(dtype=dict)
-    hyperdim = {edge: len(edgenodes) for edge, edgenodes in h_dict.items()}
+    N = len(H.nodes)
 
     # Find maximum hyperedge dimension
     if not m:
-        m = max(hyperdim.values())
+        m = H.edges.size.max()
     else:
-        assert isinstance(m, int) and m >= max(hyperdim.values())
-    if not is_uniform(h):
-        # In case it isn't uniform, we node to add the phantom node, i.e, one more dimension
-        dimension += 1
-    shape = [dimension] * m
+        assert isinstance(m, int)
+
+    if not xgi.is_uniform(H):
+        # In case it isn't uniform, we node to add the phantom node
+        N += 1
+
+    shape = [N] * m
     T = np.zeros(shape)
 
-    for i in H.edges.members():
-        initial_len = len(i)
-        edge = [k for k in i]
-        while len(edge) < m:
-            # We get here just in case is not uniform
-            edge.append(dimension - 1)
-        print(edge)
-        perms = permutations(edge)
-        entry = math.factorial(initial_len)/math.factorial(len(edge))
+    # Insert edges in the tensor, multiplying them by their combinatorial factor
+    for hyperedge in H.edges.members():
+
+        initial_len = len(hyperedge)
+        edge = list(hyperedge) # convert to list to add phantom nodes (possibly more than 1)
+
+        # Uplift adding an extra node enough times
+        if len(edge) <= m:
+            
+            while len(edge) < m:
+                edge.append(N - 1)
+            perms = list(permutations(edge))
+
+            # Combinatorial factor
+            entry = np.math.factorial(initial_len)/np.math.factorial(len(edge))
+
+        # Projection if higher dimensional
+        else:
+            perms = list(combinations(edge, m))
+            entry = 1/len(perms)
+
+        # Add the permutation (uplift) / combination (projection) to the tensor
         for indices in perms:
-            print(indices)
-            T[indices] = entry
+            T[indices] += entry
+
+
     return T
+
 
 def apply_testing(T, x):
     '''
@@ -100,9 +117,7 @@ def apply_testing(T, x):
     return y
 
 def HEC_ours(T, m=3, niter=2000, tol=1e-5, verbose=True):
-    '''
-    Chunk of code translated to Python from Julia (H_evec_NQI function) from
-    https://github.com/arbenson/Hyper-Evec-Centrality/blob/master/centrality.jl
+    '''hjkhjk
     '''
     converged = False
     x = np.array([1, 6, 5, 4, 3, 8])#np.ones(T.shape[0])
