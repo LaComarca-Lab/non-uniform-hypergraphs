@@ -6,8 +6,8 @@ Lista de cosas por hacer:
 
 - Función para crear el tensor de adyacencia a partir de hipergrafos XGI. 
   - [x] Función base
-  - [ ] Factores combinatorios en los pesos
-- [ ] HEC a mano a partir del tensor de adyacencia (basado en la implementación de XGI), incluyendo posibles nodos extra
+  - [x] Factores combinatorios en los pesos
+- [x] HEC a mano a partir del tensor de adyacencia (basado en la implementación de XGI), incluyendo posibles nodos extra
 - [x] Función para crear el hipergrafo k-uniforme a partir del hipergrafo k-no-uniforme
 
 
