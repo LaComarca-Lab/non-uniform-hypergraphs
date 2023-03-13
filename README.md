@@ -5,9 +5,11 @@ Lista de cosas por hacer:
 ## Implementación del algoritmo
 
 - Función para crear el tensor de adyacencia a partir de hipergrafos XGI. 
-  - [x] Función base
-  - [ ] Factores combinatorios en los pesos
-- [ ] HEC a mano a partir del tensor de adyacencia (basado en la implementación de XGI), incluyendo posibles nodos extra
+  - [x] Función base (para uniformes)
+  - [x] Uplift (con el nodo "fantasma" en aristas de menor dimension)
+  - [x] Projection (dividiendo hiperaristas de mayor dimension)
+
+- [x] HEC a mano a partir del tensor de adyacencia (basado en la implementación de XGI), incluyendo posibles nodos extra
 - [x] Función para crear el hipergrafo k-uniforme a partir del hipergrafo k-no-uniforme
 
 
@@ -18,22 +20,23 @@ Lista de cosas por hacer:
   - [x] Explicación de los posibles cruces entre EIG y HEC
   - [x] Sampleo masivo de redes aleatorias, calculando el Kendall's tau y/o Spearman's rho
 
-- Nosotros VS Benson, usando las ya implementadas en XGI: 
+- Nosotros VS Benson en grafos uniformes, usando las ya implementadas en XGI: 
   - [ ] Clique
   - [ ] ZEC
-  - [ ] HEC (vectorial, para distintas dimensiones k)
-  - [ ] HEC (como media ponderada de todas las dimensiones)
+  - [ ] HEC (como media ponderada de todas las dimensiones??)
 
   - Su idea de añadir no-uniformidad repitiendo índices (pág. 17)
     - [x] Función base
-    - [ ] Comparación
+    - [ ] Comparación con la nuestra
 
 - Nosotros VS (Tudisco & Higham), usando la implementada en XGI:
-  - [ ] Leer bien lo que proponen
+  - [x] Leer bien lo que proponen
   - [ ] Encontrar funciones f, g, phi, psi apropiadas con las que comparar nuestro método
 
 - Otras medidas no basadas en HEC, ZEC:
-  - [ ] Vector centrality
+  - Vector centrality
+    - [x] Función base
+    - [ ] Comparación con uplift + projection para cada dimensión
   - [ ] Otras? (hipergrado, hiperbetweenness...)
 
 ## Datasets

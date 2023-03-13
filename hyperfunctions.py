@@ -7,7 +7,7 @@ import copy
 import numpy as np
 import xgi
 from itertools import permutations
-from collections import Counter
+from itertools import combinations
 
 ######## Ours ###########
 
@@ -43,90 +43,95 @@ def uniformize(H, m=None):
     return Hextra
 
 
-def uniform_adjacency_tensor(H):
-    '''
-    Given a Hypergraph H, returns its adjacency tensor.
-    If the hypergraph is non-uniform, 
-    we first uniformize (Hu) it adding a artificial node
+def uniform_adjacency_combinatorial_tensor(H, m = None):
+    '''Given a Hypergraph H, returns its adjacency tensor (with the Permutations with Repetions number corresponding to 
+    the number of phantom nodes added).
+
+    If the hypergraph is not uniform or m != the dimension of the hyperedges, we uplift the lower-dimensional hyperedges 
+    by introducing a "phantom node" (indexed as N+1), and we project down the higher-dimensional hyperedges.
+
     :param h :: Hypergraph:
     :return t :: numpy.ndarray:
     '''
-    assert isinstance(H, xgi.Hypergraph)
+        
+    N = len(H.nodes)
+
+    # Find maximum hyperedge dimension
+    if not m:
+        m = H.edges.size.max()
+    else:
+        assert isinstance(m, int)
 
     if not xgi.is_uniform(H):
-        Hu = uniformize(H)
-    
-    dimension = len(Hu.nodes)
-    m = len(Hu.edges.members()[0])
-    
-    shape = [dimension] * m
+        # In case it isn't uniform, we node to add the phantom node
+        N += 1
+
+    shape = [N] * m
     T = np.zeros(shape)
 
-    for edge in Hu.edges.members():
-        
-        if '*' in edge:
-            edge.remove('*')
-            edge.add(dimension-1)
-        
-        perms = permutations(edge)
-        
-        for indices in perms:
-            T[indices] = 1
-    
-    return T
+    # Insert edges in the tensor, multiplying them by their combinatorial factor
+    for hyperedge in H.edges.members():
 
+        initial_len = len(hyperedge)
+        edge = list(hyperedge) # convert to list to add phantom nodes (possibly more than 1)
 
+        # Uplift adding an extra node enough times
+        if len(edge) <= m:
+            
+            while len(edge) < m:
+                edge.append(N - 1)
+            perms = list(permutations(edge))
 
-############ BENSON ################
+            # Combinatorial factor
+            entry = np.math.factorial(initial_len)/np.math.factorial(len(edge))
 
-def repeated_perms(li, m):
-    '''Given a list with unique elements, return the set of lists obtained from it
-    by duplicating any entries to reach length m lists, and their permutations. 
-    '''
-
-    unique = len(li)
-    to_add = m - unique
-    
-    assert to_add > 0 and max(Counter(li).values()) == 1 and isinstance(li,list)
-
-    goodperms = set()
-    for perm in permutations(li * (to_add+1), m):
-        if len(Counter(perm).values()) == unique:
-            goodperms.add(perm)
-    
-    return goodperms
-
-
-def uniform_adjacency_tensor_Benson(H):
-    '''
-    Given a non-uniform Hypergraph H, returns its adjacency tensor,
-    as defined by Benson in the conclusions of this paper.
-    :param h :: Hypergraph:
-    :return t :: numpy.ndarray:
-    '''
-    assert isinstance(H, xgi.Hypergraph)
-
-    if xgi.is_uniform(H):
-        raise Exception('Use the uniform_adjacency_tensor() funcion')
-    
-    # Obtain the list of hyperedge lengths
-    ms = [len(he) for he in H.edges.members()]
-
-    # Initialize a tensor with the order of the maximum hyperedge
-    shape = [len(H.nodes)] * max(ms)  
-    T = np.zeros(shape)
-    
-    for he in H.edges.members():
-        
-        repeat = max(ms) - len(he)
-        
-        if repeat == 0:
-            goodperms = permutations(he)
+        # Projection if higher dimensional
         else:
-            goodperms = repeated_perms(list(he), max(ms))
-        
-        for indices in goodperms:
-            T[indices] = 1
-    
+            perms = list(combinations(edge, m))
+            entry = 1/len(perms)
+
+        # Add the permutation (uplift) / combination (projection) to the tensor
+        for indices in perms:
+            T[indices] += entry
+
+
     return T
-    
+
+
+def apply_testing(T, x):
+    '''
+    Given an 3th order tensor T, contract it twice with vector x
+    :param T :: Tensor (hypergraph):
+    :param x :: vector (centralities):
+    :return y :: vector (T*x):
+    '''
+    assert x.shape[0] == T.shape[0]
+    # Initialize and sum accordingly
+    y = np.zeros(x.shape[0])
+    for i in range(T.shape[0]):
+        for j in product(range(T.shape[0]), repeat = len(T.shape) - 1):
+            aux = [n for n in j]
+            aux.insert(0, i)
+            aux = tuple(aux)
+            y[i] += T[aux]*np.prod(x[[i for i in j]])
+    return y
+
+def HEC_ours(T, m=3, niter=2000, tol=1e-5, verbose=True):
+    '''hjkhjk
+    '''
+    converged = False
+    x = np.array([1, 6, 5, 4, 3, 8])#np.ones(T.shape[0])
+    print([1, 6, 5, 4, 3, 8])
+    y = apply_testing(T, x)
+    for i in range(niter):
+        y_scaled = np.power(y, 1/(m - 1))   
+        x = y_scaled / np.sum(y_scaled)
+        y = apply_testing(T, x)
+        s = np.divide(y, np.power(x, m - 1))
+        converged = (max(s) - min(s)) / min(s) < tol
+        
+        if converged and verbose:
+            print('Finished in', i, 'iterations.')
+            break
+            
+    return x, converged
