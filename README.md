@@ -5,12 +5,11 @@ Lista de cosas por hacer:
 ## Implementación del algoritmo
 
 - Función para crear el tensor de adyacencia a partir de hipergrafos XGI. 
-  - [x] Función base
-  - [x] Uplift (con el nodo "fantasma")
+  - [x] Función base (para uniformes)
+  - [x] Uplift (con el nodo "fantasma" en aristas de menor dimension)
   - [x] Projection (dividiendo hiperaristas de mayor dimension)
 
 - [x] HEC a mano a partir del tensor de adyacencia (basado en la implementación de XGI), incluyendo posibles nodos extra
-
 - [x] Función para crear el hipergrafo k-uniforme a partir del hipergrafo k-no-uniforme
 
 
@@ -21,7 +20,7 @@ Lista de cosas por hacer:
   - [x] Explicación de los posibles cruces entre EIG y HEC
   - [x] Sampleo masivo de redes aleatorias, calculando el Kendall's tau y/o Spearman's rho
 
-- Nosotros VS Benson en grafos k-uniformes, usando las ya implementadas en XGI: 
+- Nosotros VS Benson en grafos uniformes, usando las ya implementadas en XGI: 
   - [ ] Clique
   - [ ] ZEC
   - [ ] HEC (como media ponderada de todas las dimensiones??)
