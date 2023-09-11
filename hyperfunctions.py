@@ -72,16 +72,18 @@ def uniform_adjacency_combinatorial_tensor(H, m = None, math_notation = True):
     else:
         assert isinstance(m, int)
 
-    if not xgi.is_uniform(H):
-        # In case it isn't uniform, we node to add the phantom node
+    if not xgi.is_uniform(H) and H.edges.size.max() <= m:
+        # In case it isn't uniform AND we are not projecting, we node to add the phantom node
         N += 1
 
-    shape = tuple(N for i in range(m))
+    shape = tuple(N for _ in range(m))
     # Insert edges in the tensor, multiplying them by their combinatorial factor
     aux_map = dict()
     for hyperedge in H.edges.members():
+
         if math_notation:
             hyperedge = {i - 1 for i in hyperedge}
+            
         initial_len = len(hyperedge)
         edge = list(hyperedge) # convert to list to add phantom nodes (possibly more than 1)
 
@@ -96,10 +98,14 @@ def uniform_adjacency_combinatorial_tensor(H, m = None, math_notation = True):
 
         # Projection if higher dimensional
         else:
-            perms = list(combinations(edge, m))
+            perms = []
+            for comb in combinations(edge,2):
+                perms += list(permutations(comb))
             entry = 1/len(perms)
+            
         # Add the permutation (uplift) / combination (projection) to the tensor
         for indices in perms:
+
             if indices in aux_map:
                 aux_map[indices] += entry
             else:
@@ -141,7 +147,8 @@ def apply(T, x):
     '''
     # Product of a tensor and a vector, only taking the non-zero values (using a dictionary)
     y = np.zeros(x.shape[0])
-    for k, v in T[0].items():
-        ls = [i for i in k]
-        y[ls[0]] += v * np.prod(x[[i for i in ls[1:]]])
+    for edge, weight in T[0].items():
+        ls = [node for node in edge]
+        y[ls[0]] += weight * np.prod(x[[node for node in ls[1:]]])
+        
     return y
