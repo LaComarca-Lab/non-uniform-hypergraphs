@@ -148,7 +148,6 @@ def apply(T, x):
     # Product of a tensor and a vector, only taking the non-zero values (using a dictionary)
     y = np.zeros(x.shape[0])
     for edge, weight in T[0].items():
-        ls = [node for node in edge]
-        y[ls[0]] += weight * np.prod(x[[node for node in ls[1:]]])
+        y[edge[0]] += weight * np.prod(x[list(edge[1:])])
         
     return y
