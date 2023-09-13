@@ -140,7 +140,7 @@ def HEC_ours(T, m=3, niter=100, tol=1e-6, verbose=True):
 
 def apply(T, x):
     '''
-    Given an 3th order tensor T, contract it twice with vector x
+    Given an nth order tensor T, contract it (n-1) times with vector x
     :param T :: (python dictionary, shape):
     :param x :: vector (centralities):
     :return y :: vector (T*x):
