@@ -99,7 +99,7 @@ def uniform_adjacency_combinatorial_tensor(H, m = None, math_notation = True):
         # Projection if higher dimensional
         else:
             perms = []
-            for comb in combinations(edge,2):
+            for comb in combinations(edge, m):
                 perms += list(permutations(comb))
             entry = 1/len(perms)
             
