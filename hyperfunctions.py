@@ -11,6 +11,16 @@ from itertools import combinations
 
 ######## Ours ###########
 
+
+def is_uniform(h):
+    '''
+    Given a Hypergraph h, returns if it's wether uniform or not.
+    :param h :: Hypergraph:
+    :return t :: boolean:
+    '''
+    return len(set([len(i) for i in h.edges.members()])) == 1
+
+
 def uniformize(H, m=None):
     '''
     From  a Hypergraph H, make it uniform adding an artificial node connected in such a way
@@ -43,41 +53,42 @@ def uniformize(H, m=None):
     return Hextra
 
 
-def uniform_adjacency_combinatorial_tensor(H, m = None):
-    '''Given a Hypergraph H, returns its adjacency tensor (with the Permutations with Repetions number corresponding to 
-    the number of phantom nodes added).
 
-    If the hypergraph is not uniform or m != the dimension of the hyperedges, we uplift the lower-dimensional hyperedges 
-    by introducing a "phantom node" (indexed as N+1), and we project down the higher-dimensional hyperedges.
 
-    :param h :: Hypergraph:
-    :return t :: numpy.ndarray:
+def uniform_adjacency_combinatorial_tensor(H, m = None, math_notation = True):
     '''
-        
+    Given a Hypergraph H, returns its adjacency tensor (with the Permutations with Repetions number corresponding to
+    the number of phantom nodes added).
+    If the hypergraph is not uniform or m != the dimension of the hyperedges, we uplift the lower-dimensional hyperedges
+    by introducing a "phantom node" (indexed as N+1), and we project down the higher-dimensional hyperedges.
+    :param h :: Hypergraph:
+    :param math_notation :: Boolean (wether the first node starst at 0 or 1):
+    :return t :: (python dictionary, shape):
+    '''
     N = len(H.nodes)
-
     # Find maximum hyperedge dimension
     if not m:
         m = H.edges.size.max()
     else:
         assert isinstance(m, int)
 
-    if not xgi.is_uniform(H):
-        # In case it isn't uniform, we node to add the phantom node
+    if not xgi.is_uniform(H) and H.edges.size.max() <= m:
+        # In case it isn't uniform AND we are not projecting, we node to add the phantom node
         N += 1
 
-    shape = [N] * m
-    T = np.zeros(shape)
-
+    shape = tuple(N for _ in range(m))
     # Insert edges in the tensor, multiplying them by their combinatorial factor
+    aux_map = dict()
     for hyperedge in H.edges.members():
 
+        if math_notation:
+            hyperedge = {i - 1 for i in hyperedge}
+            
         initial_len = len(hyperedge)
         edge = list(hyperedge) # convert to list to add phantom nodes (possibly more than 1)
 
         # Uplift adding an extra node enough times
         if len(edge) <= m:
-            
             while len(edge) < m:
                 edge.append(N - 1)
             perms = list(permutations(edge))
@@ -87,51 +98,73 @@ def uniform_adjacency_combinatorial_tensor(H, m = None):
 
         # Projection if higher dimensional
         else:
-            perms = list(combinations(edge, m))
+            perms = []
+            for comb in combinations(edge, m):
+                perms += list(permutations(comb))
             entry = 1/len(perms)
-
+            
         # Add the permutation (uplift) / combination (projection) to the tensor
         for indices in perms:
-            T[indices] += entry
+
+            if indices in aux_map:
+                aux_map[indices] += entry
+            else:
+                aux_map[indices] = entry
+
+    return aux_map, shape
 
 
-    return T
-
-
-def apply_testing(T, x):
+def HEC_ours(T, m=3, niter=100, tol=1e-6, verbose=True):
     '''
-    Given an 3th order tensor T, contract it twice with vector x
-    :param T :: Tensor (hypergraph):
-    :param x :: vector (centralities):
-    :return y :: vector (T*x):
-    '''
-    assert x.shape[0] == T.shape[0]
-    # Initialize and sum accordingly
-    y = np.zeros(x.shape[0])
-    for i in range(T.shape[0]):
-        for j in product(range(T.shape[0]), repeat = len(T.shape) - 1):
-            aux = [n for n in j]
-            aux.insert(0, i)
-            aux = tuple(aux)
-            y[i] += T[aux]*np.prod(x[[i for i in j]])
-    return y
-
-def HEC_ours(T, m=3, niter=2000, tol=1e-5, verbose=True):
-    '''hjkhjk
+    Given a hypergraph (tensor, in the form of a sparse tensor, (python dictionary, shape)) T, we calculate it HEC using the power method.
+    :param T :: (python dictionary, shape):
+    :param m :: Integer (power):
+    :param niter :: Integer (number of iterations):
     '''
     converged = False
-    x = np.array([1, 6, 5, 4, 3, 8])#np.ones(T.shape[0])
-    print([1, 6, 5, 4, 3, 8])
-    y = apply_testing(T, x)
+    x = np.ones(T[1][0])
+    y = apply(T, x)
     for i in range(niter):
-        y_scaled = np.power(y, 1/(m - 1))   
+        y_scaled = np.power(y, 1 / m)
         x = y_scaled / np.sum(y_scaled)
-        y = apply_testing(T, x)
-        s = np.divide(y, np.power(x, m - 1))
+        y = apply(T, x)
+        s = np.divide(y, np.power(x, m))
         converged = (max(s) - min(s)) / min(s) < tol
-        
+
         if converged and verbose:
             print('Finished in', i, 'iterations.')
             break
-            
+
     return x, converged
+
+
+def apply(T, x):
+    '''
+    Given an nth order tensor T, contract it (n-1) times with vector x
+    :param T :: (python dictionary, shape):
+    :param x :: vector (centralities):
+    :return y :: vector (T*x):
+    '''
+    # Product of a tensor and a vector, only taking the non-zero values (using a dictionary)
+    y = np.zeros(x.shape[0])
+    for edge, weight in T[0].items():
+        y[edge[0]] += weight * np.prod(x[list(edge[1:])])
+        
+    return y
+
+
+def benson_datasets_to_hypergraphs(nverts, simplices):
+    '''
+    Tansform Benson's datasets into hypergraphs to work with. 
+    :param nverts :: File of vertices:
+    :param simplices :: File of simplices:
+    :return t :: xgi.Hypergraph:
+    '''
+    hypergraph_from_dataset = xgi.Hypergraph()
+    with open(nverts) as f1, open(simplices) as f2:
+        for line1 in f1:
+            number_vertex = int(line1)
+            hyperedge = [int(next(f2)) for _ in range(number_vertex)]
+            if len(hyperedge) > 0:
+                hypergraph_from_dataset.add_edge(hyperedge)
+    return hypergraph_from_dataset
