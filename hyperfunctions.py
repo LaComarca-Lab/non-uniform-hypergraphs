@@ -152,10 +152,12 @@ def apply(T, x):
         
     return y
 
+
 def benson_datasets_to_hypergraphs(nverts, simplices):
     '''
     Tansform Benson's datasets into hypergraphs to work with. 
-    :param H :: File of vertex, file of simplices:
+    :param nverts :: File of vertices:
+    :param simplices :: File of simplices:
     :return t :: xgi.Hypergraph:
     '''
     hypergraph_from_dataset = xgi.Hypergraph()
