@@ -125,10 +125,10 @@ def HEC_ours(T, m=3, niter=100, tol=1e-6, verbose=True):
     x = np.ones(T[1][0])
     y = apply(T, x)
     for i in range(niter):
-        y_scaled = np.power(y, 1 / (m - 1))
+        y_scaled = np.power(y, 1 / m)
         x = y_scaled / np.sum(y_scaled)
         y = apply(T, x)
-        s = np.divide(y, np.power(x, m - 1))
+        s = np.divide(y, np.power(x, m))
         converged = (max(s) - min(s)) / min(s) < tol
 
         if converged and verbose:
@@ -151,3 +151,18 @@ def apply(T, x):
         y[edge[0]] += weight * np.prod(x[list(edge[1:])])
         
     return y
+
+def benson_datasets_to_hypergraphs(nverts, simplices):
+    '''
+    Tansform Benson's datasets into hypergraphs to work with. 
+    :param H :: File of vertex, file of simplices:
+    :return t :: xgi.Hypergraph:
+    '''
+    hypergraph_from_dataset = xgi.Hypergraph()
+    with open(nverts) as f1, open(simplices) as f2:
+        for line1 in f1:
+            number_vertex = int(line1)
+            hyperedge = [int(next(f2)) for _ in range(number_vertex)]
+            if len(hyperedge) > 0:
+                hypergraph_from_dataset.add_edge(hyperedge)
+    return hypergraph_from_dataset
