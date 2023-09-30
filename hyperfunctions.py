@@ -71,8 +71,8 @@ def uniform_adjacency_combinatorial_tensor(H, m = None, math_notation = True):
         m = H.edges.size.max()
     else:
         assert isinstance(m, int)
-
-    if not xgi.is_uniform(H) and H.edges.size.max() <= m:
+    # With the previous approach it never added a phantom node but in the H.edges.size.max() <= m
+    if not xgi.is_uniform(H) and H.edges.size.min() < m:
         # In case it isn't uniform AND we are not projecting, we node to add the phantom node
         N += 1
 
