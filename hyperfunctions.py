@@ -8,18 +8,23 @@ import numpy as np
 import xgi
 from itertools import permutations
 from itertools import combinations
+from collections import Counter
+
 
 ######## Ours ###########
 
 
-def is_uniform(h):
+def is_uniform(H):
     '''
-    Given a Hypergraph h, returns if it's wether uniform or not.
-    :param h :: Hypergraph:
+    Given a Hypergraph H, returns whether it is uniform or not.
+    :param H :: Hypergraph:
     :return t :: boolean:
     '''
-    return len(set([len(i) for i in h.edges.members()])) == 1
+    return len(set([len(i) for i in H.edges.members()])) == 1
 
+
+
+### is this still necessary ???
 
 def uniformize(H, m=None):
     '''
@@ -58,9 +63,9 @@ def uniformize(H, m=None):
 def uniform_adjacency_combinatorial_tensor(H, m = None, math_notation = True):
     '''
     Given a Hypergraph H, returns its adjacency tensor (with the Permutations with Repetions number corresponding to
-    the number of phantom nodes added).
+    the number of auxiliary nodes added).
     If the hypergraph is not uniform or m != the dimension of the hyperedges, we uplift the lower-dimensional hyperedges
-    by introducing a "phantom node" (indexed as N+1), and we project down the higher-dimensional hyperedges.
+    by introducing a "auxiliary node" (indexed as N+1), and we project down the higher-dimensional hyperedges.
     :param h :: Hypergraph:
     :param math_notation :: Boolean (wether the first node starst at 0 or 1):
     :return t :: (python dictionary, shape):
@@ -71,21 +76,21 @@ def uniform_adjacency_combinatorial_tensor(H, m = None, math_notation = True):
         m = H.edges.size.max()
     else:
         assert isinstance(m, int)
-    # With the previous approach it never added a phantom node but in the H.edges.size.max() <= m
+        
     if not xgi.is_uniform(H) and H.edges.size.min() < m:
-        # In case it isn't uniform AND we are not projecting, we node to add the phantom node
+        # In case it isn't uniform AND we are not projecting, we node to add the auxiliary node
         N += 1
 
     shape = tuple(N for _ in range(m))
     # Insert edges in the tensor, multiplying them by their combinatorial factor
     aux_map = dict()
     for hyperedge in H.edges.members():
-
+        
         if math_notation:
             hyperedge = {i - 1 for i in hyperedge}
             
         initial_len = len(hyperedge)
-        edge = list(hyperedge) # convert to list to add phantom nodes (possibly more than 1)
+        edge = list(hyperedge) # convert to list to add auxiliary nodes (possibly more than 1)
 
         # Uplift adding an extra node enough times
         if len(edge) <= m:
@@ -94,22 +99,22 @@ def uniform_adjacency_combinatorial_tensor(H, m = None, math_notation = True):
             perms = list(permutations(edge))
 
             # Combinatorial factor
-            entry = np.math.factorial(initial_len)/np.math.factorial(len(edge))
+            weight = np.math.factorial(initial_len)/np.math.factorial(len(edge))
 
         # Projection if higher dimensional
         else:
             perms = []
             for comb in combinations(edge, m):
                 perms += list(permutations(comb))
-            entry = 1/len(perms)
+            weight = 1#/m
             
         # Add the permutation (uplift) / combination (projection) to the tensor
         for indices in perms:
 
             if indices in aux_map:
-                aux_map[indices] += entry
+                aux_map[indices] += weight
             else:
-                aux_map[indices] = entry
+                aux_map[indices] = weight
 
     return aux_map, shape
 
@@ -153,9 +158,12 @@ def apply(T, x):
     return y
 
 
+######## Benson ###########
+
+
 def benson_datasets_to_hypergraphs(nverts, simplices):
     '''
-    Tansform Benson's datasets into hypergraphs to work with. 
+    Transform Benson's datasets into hypergraphs to work with. 
     :param nverts :: File of vertices:
     :param simplices :: File of simplices:
     :return t :: xgi.Hypergraph:
@@ -168,3 +176,100 @@ def benson_datasets_to_hypergraphs(nverts, simplices):
             if len(hyperedge) > 0:
                 hypergraph_from_dataset.add_edge(hyperedge)
     return hypergraph_from_dataset
+
+
+def increase_edge(edgeset):
+    '''
+    Given some edges, returns all edges whose length is one higher with those same nodes
+    :param edgeset :: set of edges:
+    :return new_edgeset :: modified set of edges:
+    '''
+    
+    new_edgeset = set()
+    counterlist = [] # all counters must be different, otherwise we don't add the node
+    for edge in edgeset:
+        
+        edge = list(edge)
+        
+        # Add each node in the edge to itself, increasing in 1 the length
+        for node in edge:
+            
+            copyedge = copy.copy(edge)
+            copyedge.append(node)
+            
+            # Check for duplicates (permuted edges already with the same node count within)
+            if Counter(copyedge) not in counterlist: 
+                new_edgeset.add(tuple(copyedge))
+                
+                counterlist.append(Counter(copyedge))
+            
+    return new_edgeset
+
+
+def alternative_uniformization(H, m=None, math_notation=True):
+    '''
+    Given a Hypergraph H, returns its adjacency tensor.
+    If the hypergraph is not uniform or m != the dimension of the hyperedges, we duplicate the existing indices of smaller hyperedges, 
+    with suitable weight, and we project down higher hyperedges.
+    :param h :: Hypergraph:
+    :param math_notation :: Boolean (wether the first node starst at 0 or 1):
+    :return t :: (python dictionary, shape):
+    '''
+    N = len(H.nodes)
+    # Find maximum hyperedge dimension
+    if not m:
+        m = H.edges.size.max()
+    else:
+        assert isinstance(m, int)
+    
+    # Product of p_i's (occurrences of each node) on an edge
+    psprod = lambda edge: np.prod([np.math.factorial(p_i) for p_i in Counter(edge).values()])
+    
+    shape = tuple(N for _ in range(m))
+    # Insert edges in the tensor, multiplying them by their combinatorial factor
+    aux_map = dict()
+    for hyperedge in H.edges.members():
+
+        if math_notation:
+            hyperedge = {i - 1 for i in hyperedge}
+        
+        initial_len = len(hyperedge)
+        edge = tuple(hyperedge) # convert to list to add auxiliary nodes (possibly more than 1)
+
+        edgeset = {edge}
+        # Uplift adding an extra node enough times
+        
+        # Use this uniformization to add existing nodes enough times 
+        if len(edge) <= m:
+            
+            # Increase up to the desired size
+            while len(list(edgeset)[0]) < m:
+                edgeset = increase_edge(edgeset)
+            
+            # Calculate the alpha factor for the combinatorial factor
+            alpha = np.sum([np.math.factorial(len(edge))/psprod(edge) for edge in edgeset])
+
+            # Combinatorial factor
+            weight = len(edge)/alpha
+            
+            # Get all permutations of all increased hyperedges
+            perms = []
+            for edge in edgeset:
+                perms += list(permutations(edge))
+                        
+        # Projection if higher dimensional (same as in the UPHEC case)
+        else:
+            perms = []
+            for comb in combinations(edge, m):
+                perms += list(permutations(comb))
+            weight = 1
+            
+        # Add the permutation (uplift) / combination (projection) to the tensor
+        for indices in perms:
+
+            if indices in aux_map:
+                aux_map[indices] += weight
+            else:
+                aux_map[indices] = weight
+
+    return aux_map, shape
