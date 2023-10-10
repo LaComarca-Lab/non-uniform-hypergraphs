@@ -7,6 +7,7 @@ import copy
 import numpy as np
 import xgi
 from itertools import permutations
+from itertools import combinations
 from collections import Counter
 
 ######################### Vector centrality #########################
@@ -32,99 +33,118 @@ def line_graph(H):
     return LG
 
 
-def vector_centrality(H):
-    '''Compute the vector centrality of nodes in hypergraphs
-    :param H :: xgi.Hypergraph:
-    :return vc :: dict:
+######## Benson ###########
+
+
+def benson_datasets_to_hypergraphs(nverts, simplices):
     '''
+    Transform Benson's datasets into hypergraphs to work with. 
+    :param nverts :: File of vertices:
+    :param simplices :: File of simplices:
+    :return t :: xgi.Hypergraph:
+    '''
+    hypergraph_from_dataset = xgi.Hypergraph()
+    with open(nverts) as f1, open(simplices) as f2:
+        for line1 in f1:
+            number_vertex = int(line1)
+            hyperedge = [int(next(f2)) for _ in range(number_vertex)]
+            if len(hyperedge) > 0:
+                hypergraph_from_dataset.add_edge(hyperedge)
+    return hypergraph_from_dataset
 
-    # Construct the line graph and compute its eigenvector centrality 
-    LG = line_graph(H)
-    LGcent = nx.eigenvector_centrality(LG)
 
-    # Initialize the vector centrality dictionary
-    vc = {node: [] for node in H.nodes}
-
-    # Get hyperedge indices and dimensions
-    edge_label_dict = {tuple(edge):index for index, edge in enumerate(H.edges.members())}
-    hyperedge_dims = {tuple(edge):len(edge) for edge in H.edges.members()} 
-
-    # Maximum dimension of the hyperedges
-    D = np.max(list(hyperedge_dims.values()))
-
-    for k in range(2, D+1):
-        c_i = np.zeros(len(H.nodes))
-
-        # Hyperedges of dimension K
-        for edge, _ in list(filter(lambda x: x[1] == k, hyperedge_dims.items())):
+def increase_edge(edgeset):
+    '''
+    Given some edges, returns all edges whose length is one higher with those same nodes
+    :param edgeset :: set of edges:
+    :return new_edgeset :: modified set of edges:
+    '''
+    
+    new_edgeset = set()
+    counterlist = [] # all counters must be different, otherwise we don't add the node
+    for edge in edgeset:
         
-            # Sum the centrality contribution to its hyperedges
-            for node in edge:
-                try:
-                    c_i[node] += LGcent[edge_label_dict[edge]]
-                except IndexError:
-                    raise Exception('Nodes must be written with the Pythonic indexing (0,1,2...)')
-        # Weight
-        c_i *= 1/k
+        edge = list(edge)
+        
+        # Add each node in the edge to itself, increasing in 1 the length
+        for node in edge:
+            
+            copyedge = copy.copy(edge)
+            copyedge.append(node)
+            
+            # Check for duplicates (permuted edges already with the same node count within)
+            if Counter(copyedge) not in counterlist: 
+                new_edgeset.add(tuple(copyedge))
+                
+                counterlist.append(Counter(copyedge))
+            
+    return new_edgeset
 
-        # Append to dictionary
-        for node in H.nodes:
-            vc[node].append(c_i[node])
 
-    return vc
-
-
-################# Benson's non-uniformity proposal ##################
-# From "Three hypergraph eigenvector centralities"
-
-def repeated_perms(li, m):
-    '''Given a list with unique elements, return the set of lists obtained from it
-    by duplicating any entries to reach length m lists, and their permutations. 
+def alternative_uniformization(H, m=None, math_notation=True):
     '''
-
-    unique = len(li)
-    to_add = m - unique
-    
-    assert to_add > 0 and max(Counter(li).values()) == 1 and isinstance(li,list)
-
-    goodperms = set()
-    for perm in permutations(li * (to_add+1), m):
-        if len(Counter(perm).values()) == unique:
-            goodperms.add(perm)
-    
-    return goodperms
-
-
-def uniform_adjacency_tensor_Benson(H):
-    '''
-    Given a non-uniform Hypergraph H, returns its adjacency tensor,
-    as defined by Benson in the conclusions of this paper.
+    Given a Hypergraph H, returns its adjacency tensor.
+    If the hypergraph is not uniform or m != the dimension of the hyperedges, we duplicate the existing indices of smaller hyperedges, 
+    with suitable weight, and we project down higher hyperedges.
     :param h :: Hypergraph:
-    :return t :: numpy.ndarray:
+    :param math_notation :: Boolean (wether the first node starst at 0 or 1):
+    :return t :: (python dictionary, shape):
     '''
-    assert isinstance(H, xgi.Hypergraph)
-
-    if xgi.is_uniform(H):
-        raise Exception('Use the uniform_adjacency_tensor() funcion')
+    N = len(H.nodes)
+    # Find maximum hyperedge dimension
+    if not m:
+        m = H.edges.size.max()
+    else:
+        assert isinstance(m, int)
     
-    # Obtain the list of hyperedge lengths
-    ms = [len(he) for he in H.edges.members()]
-
-    # Initialize a tensor with the order of the maximum hyperedge
-    shape = [len(H.nodes)] * max(ms)  
-    T = np.zeros(shape)
+    # Product of p_i's (occurrences of each node) on an edge
+    psprod = lambda edge: np.prod([np.math.factorial(p_i) for p_i in Counter(edge).values()])
     
-    for he in H.edges.members():
+    shape = tuple(N for _ in range(m))
+    # Insert edges in the tensor, multiplying them by their combinatorial factor
+    aux_map = dict()
+    for hyperedge in H.edges.members():
+
+        if math_notation:
+            hyperedge = {i - 1 for i in hyperedge}
         
-        repeat = max(ms) - len(he)
+        initial_len = len(hyperedge)
+        edge = tuple(hyperedge) # convert to list to add auxiliary nodes (possibly more than 1)
+
+        edgeset = {edge}
+        # Uplift adding an extra node enough times
         
-        if repeat == 0:
-            goodperms = permutations(he)
+        # Use this uniformization to add existing nodes enough times 
+        if len(edge) <= m:
+            
+            # Increase up to the desired size
+            while len(list(edgeset)[0]) < m:
+                edgeset = increase_edge(edgeset)
+            
+            # Calculate the alpha factor for the combinatorial factor
+            alpha = np.sum([np.math.factorial(len(edge))/psprod(edge) for edge in edgeset])
+
+            # Combinatorial factor
+            weight = len(edge)/alpha
+            
+            # Get all permutations of all increased hyperedges
+            perms = []
+            for edge in edgeset:
+                perms += list(permutations(edge))
+                        
+        # Projection if higher dimensional (same as in the UPHEC case)
         else:
-            goodperms = repeated_perms(list(he), max(ms))
-        
-        for indices in goodperms:
-            T[indices] = 1
-    
-    return T
-    
+            perms = []
+            for comb in combinations(edge, m):
+                perms += list(permutations(comb))
+            weight = 1
+            
+        # Add the permutation (uplift) / combination (projection) to the tensor
+        for indices in perms:
+
+            if indices in aux_map:
+                aux_map[indices] += weight
+            else:
+                aux_map[indices] = weight
+
+    return aux_map, shape
