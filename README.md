@@ -1,7 +1,7 @@
 # Eigenvector-like centrality in non-uniform Hypergraphs
 
 This repository contains the scripts, data and (pre-processed) figures from the Uplifting edges in higher order networks: spectral
-centralities in non-uniform hypergraphs" paper by G. Contreras-Aso, C. Pérez-Corral, M. Romance, available as a preprint at [Arxiv](????).
+centralities in non-uniform hypergraphs" paper by G. Contreras-Aso, C. Pérez-Corral, M. Romance, available as a preprint at [Arxiv](https://arxiv.org/abs/2310.20335).
 
 
 ## Structure of the repository
