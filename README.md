@@ -1,7 +1,7 @@
 # Eigenvector-like centrality in non-uniform Hypergraphs
 
-This repository contains the scripts, data and (pre-processed) figures from the Uplifting edges in higher order networks: spectral
-centralities in non-uniform hypergraphs" paper by G. Contreras-Aso, C. Pérez-Corral, M. Romance, available as a preprint at [Arxiv](https://arxiv.org/abs/2310.20335).
+This repository contains the scripts, data and (pre-processed) figures from the : Uplifting edges in higher order networks: spectral
+centralities in non-uniform hypergraphs" paper by G. Contreras-Aso, C. Pérez-Corral, M. Romance, available as a preprint at [arXiv:2310.20335](https://arxiv.org/abs/2310.20335).
 
 
 ## Structure of the repository
@@ -15,10 +15,19 @@ The following files and directories are briefly summarized, in the same order as
 - `TagsAskUbuntu_example.ipynb`: This notebook computes all of the centralities (UPHEC, HEC, Alternative uniformization) which will later be compared, on the Tags_ask_ubuntu dataset.
 - `RankingAnalysis.ipynb`: This notebook analyzes the output data from the previous notebook, in particular computing Kendall tau correlations between rankings. 
 - `ZEC_example.ipynb`: This notebook contains the computation of the Perron-like Z-eigenvector of an example hypergraph, following the example in the main text.
-- `Dataset/` directory: contains the Tags_ask_ubuntu dataset [1].
+- `Dataset/`: contains the Tags_ask_ubuntu dataset [1].
 - `Output/`: Output of the `TagsAskUbuntu_example.ipynb` notebook.
 - `Figures/`: Pre-processed plots.
 
 
 [1] "Simplicial closure and higher-order link prediction". Austin R. Benson, Rediet Abebe, Michael T. Schaub, Ali Jadbabaie, and Jon Kleinberg. PNAS vol. 115, no. 48
- `
+
+Bibtex citation:
+```
+@article{contreras2023uplifting,
+  title={Uplifting edges in higher order networks: spectral centralities for non-uniform hypergraphs},
+  author={Contreras-Aso, Gonzalo and P{\'e}rez-Corral, Cristian and Romance, Miguel},
+  journal={arXiv preprint arXiv:2310.20335},
+  year={2023}
+}
+```
