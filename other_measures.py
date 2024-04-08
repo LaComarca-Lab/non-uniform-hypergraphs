@@ -35,24 +35,6 @@ def line_graph(H):
 
 ######## Benson ###########
 
-
-def benson_datasets_to_hypergraphs(nverts, simplices):
-    '''
-    Transform Benson's datasets into hypergraphs to work with. 
-    :param nverts :: File of vertices:
-    :param simplices :: File of simplices:
-    :return t :: xgi.Hypergraph:
-    '''
-    hypergraph_from_dataset = xgi.Hypergraph()
-    with open(nverts) as f1, open(simplices) as f2:
-        for line1 in f1:
-            number_vertex = int(line1)
-            hyperedge = [int(next(f2)) for _ in range(number_vertex)]
-            if len(hyperedge) > 0:
-                hypergraph_from_dataset.add_edge(hyperedge)
-    return hypergraph_from_dataset
-
-
 def increase_edge(edgeset):
     '''
     Given some edges, returns all edges whose length is one higher with those same nodes
