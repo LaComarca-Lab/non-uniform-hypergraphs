@@ -24,6 +24,26 @@ def is_uniform(H):
 
 
 
+def uniform_section(H, edgedict, m):
+    '''
+    Given a Hypergraph H, get its m-uniform connected subhypegraph.
+    :param H :: Hypergraph:
+    :param m :: integer:
+    :return Hum :: Hypergraph:
+    '''
+    Hum = H.copy()
+    for edge, members in edgedict.items():
+        if len(members) != m:
+            Hum.remove_edge(edge)
+            
+    Hum.cleanup(connected=True)
+    
+    Hum.remove_nodes_from(Hum.nodes - xgi.algorithms.largest_connected_component(Hum))
+
+    return Hum
+
+
+
 ### is this still necessary ???
 
 def uniformize(H, m=None):
