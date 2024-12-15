@@ -1,5 +1,5 @@
 cff-version: 1.2.0
-message: "If you use this work, please cite it using the following metadata."
+message: "If you use this article, please cite it using the following metadata."
 title: "Uplifting edges in higher-order networks: Spectral centralities for non-uniform hypergraphs"
 authors:
   - family-names: "Contreras-Aso"
@@ -16,6 +16,7 @@ keywords:
   - "centrality"
   - "hypermatrices"
   - "eigenvectors"
+type: article
 journal: "AIMS Mathematics"
 volume: "9"
 number: "11"
