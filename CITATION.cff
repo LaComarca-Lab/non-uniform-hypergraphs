@@ -1,0 +1,23 @@
+cff-version: 1.2.0
+message: "If you use this work, please cite it using the following metadata."
+title: "Uplifting edges in higher-order networks: Spectral centralities for non-uniform hypergraphs"
+authors:
+  - family-names: "Contreras-Aso"
+    given-names: "Gonzalo"
+  - family-names: "Pérez-Corral"
+    given-names: "Cristian"
+  - family-names: "Romance"
+    given-names: "Miguel"
+doi: "10.3934/math.20241539"
+url: "https://www.aimspress.com/article/doi/10.3934/math.20241539"
+keywords:
+  - "graph theory"
+  - "hypergraphs"
+  - "centrality"
+  - "hypermatrices"
+  - "eigenvectors"
+journal: "AIMS Mathematics"
+volume: "9"
+number: "11"
+pages: "32045-32075"
+issn: "2473-6988"
