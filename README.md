@@ -21,14 +21,14 @@ The following files and directories are briefly summarized, in the same order as
 - `Figures/`: Pre-processed plots, saved from `Examples/RankingAnalysis/{hypergraph)_RankingAnalysis.ipynb`.
 
 
-# Data sources
+## Data sources
 
 All real hypergraphs are drawn from the XGI library [1] hypergraph database (XGI-DATA). There are some synthetic ones which we generate and analyze in the `UPHEC_example.ipynb` and `ZEC_example.ipynb`. Lastly, we also generate several random ones in `Examples/random_example.ipynb` with the `xgi.generators.random.random_hypergraph()` function.
 
 [1] Landry, N. W., Lucas, M., Iacopini, I., Petri, G., Schwarze, A., Patania, A., & Torres, L. (2023). XGI: A Python package for higher-order interaction networks. Journal of Open Source Software, 8(85), 5162. https://doi.org/10.21105/joss.05162
 
 
-# How to cite
+## How to cite
 
 Bibtex citation:
 ```
